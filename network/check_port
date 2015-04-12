@@ -1,10 +1,10 @@
 #!/usr/bin/env ruby
 
-require 'sensu-plugin/check/cli'
+require_relative '../base'
 require 'socket'
 require 'timeout'
 
-class CheckPort < Sensu::Plugin::Check::CLI
+class CheckPort < Check
   check_name 'Check Port'
 
   option :tcp, short: '-t <port>',

@@ -1,12 +1,17 @@
 #!/usr/bin/env ruby
 # Inspired by sensu-community-plugins:network/metrics-net.rb
 
-require 'sensu-plugin/metric/cli'
-require 'socket'
+require_relative '../base'
 
-class InterfaceCounterMetrics < Sensu::Plugin::Metric::CLI::Graphite
+#
+# Fetch interface counter information from the /sys filesystem
+# (tx/rx packets, bytes and errors)
+#
+# Accepts a graphite prefix
+#
+class InterfaceCounterMetrics < Metric::Graphite
   option :prefix, short: '-p <prefix>',
-                  description: 'Graphite prefix/path. %H is hostname, %h is hostname with underscores',
+                  description: 'Graphite prefix/path. See README',
                   default: '%h.net.iface'
 
   def run
@@ -32,19 +37,5 @@ class InterfaceCounterMetrics < Sensu::Plugin::Metric::CLI::Graphite
 
     value = File.open("#{iface_path}/operstate").read.strip
     output "#{prefix}.#{iface}.state", value, @timestamp
-  end
-
-  # TODO: Move these into a base class.
-  # Most metrics will probably benefit from this
-  def prefix
-    @prefix ||= parse_prefix
-  end
-
-  def parse_prefix
-    hostname = Socket.gethostname
-    underscores = hostname.gsub('.', '_')
-
-    config[:prefix].gsub(/%[hH]/,       '%H' => hostname,
-                                        '%h' => underscores)
   end
 end
