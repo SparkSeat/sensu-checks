@@ -1,0 +1,50 @@
+#!/usr/bin/env ruby
+
+require_relative '../base'
+
+class MemoryMetrics < Metric::Graphite
+  option :prefix, short: '-p <prefix>',
+                  description: 'Graphite prefix/path. See README',
+                  default: '%h.memory'
+
+  def run
+    meminfo.each do |name, value|
+      next unless metrics[name]
+      output "#{prefix}.#{metrics[name]}", value, timestamp
+    end
+
+    output "#{prefix}.percent_free", percent_free, timestamp
+    ok
+  end
+
+  private
+
+  def fields
+    [:name, :value, :units]
+  end
+
+  def metrics
+    {
+      'MemTotal'     => 'total',
+      'MemFree'      => 'free',
+      'MemAvailable' => 'avail',
+      'Buffers'      => 'buffers',
+      'Cached'       => 'cached'
+    }
+  end
+
+  def percent_free
+    raw = meminfo['MemFree'].to_f / meminfo['MemTotal'].to_f
+
+    (raw * 100).round(2)
+  end
+
+  # Map the /proc/meminfo file into a hash
+  def meminfo
+    @_meminfo ||= open('/proc/meminfo')
+                  .read
+                  .split("\n")
+                  .map { |r| r.split(/[ :]+/).take(2) }
+                  .to_h
+  end
+end
