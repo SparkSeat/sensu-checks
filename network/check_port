@@ -7,23 +7,23 @@ require 'timeout'
 class CheckPort < Check
   check_name 'Check Port'
 
-  option :tcp, short: '-t <port>',
-               description: 'Check a TCP port'
+  option :tcp,
+         short: '-t <port>',
+         description: 'Check a TCP port'
 
-  option :udp, short: '-u <port>',
-               description: 'Check a UDP port'
+  option :udp,
+         short: '-u <port>',
+         description: 'Check a UDP port'
 
-  option :host, short: '-h <host>',
-                description: 'The host to try and connect to',
-                default: 'localhost'
+  option :host,
+         short: '-h <host>',
+         description: 'The host to try and connect to',
+         default: 'localhost'
 
-  option :timeout, short: '-s <timeout>',
-                   description: 'Timeout in seconds',
-                   default: '5'
-
-  option :level, short: '-l crit|warn',
-                 description: 'Which status to fail with',
-                 default: 'crit'
+  option :timeout,
+         short: '-s <timeout>',
+         description: 'Timeout in seconds',
+         default: '5'
 
   def run
     if config[:tcp]
@@ -33,30 +33,31 @@ class CheckPort < Check
     else
       unknown 'No port/protocol specified'
     end
+  rescue => exception
+    # Can't use magic $! variable when rescuing an entire method for some reason
+    critical map_error_message(exception)
   end
 
   private
 
   def check_tcp
-    begin
-      Timeout.timeout(config[:timeout].to_i) do
-        TCPSocket.new(config[:host], config[:tcp].to_i).close
-        ok "Successful connection to #{config[:tcp]}/tcp"
-      end
-    rescue Errno::ECONNREFUSED
-      message 'Connection Refused'
-    rescue Errno::EHOSTUNREACH
-      message 'Host Unreachable'
-    rescue Timeout::Error
-      message 'Socket Timeout'
-    rescue SocketError => message
-      message "Unhandled Error: #{message}"
+    Timeout.timeout(config[:timeout].to_i) do
+      TCPSocket.new(config[:host], config[:tcp].to_i).close
+      ok "Successful connection to #{config[:tcp]}/tcp"
     end
-
-    config[:level].downcase.start_with?('warn') ? warning : critical
   end
 
   def check_udp
     critical 'Not implemented! UDP Checking is really hard'
+  end
+
+  def map_error_message(exception)
+    case exception.class.to_s
+    when 'Errno::ENETUNREACH'  then 'Network Unreachable'
+    when 'Errno::ECONNREFUSED' then 'Connection Refused'
+    when 'Errno::EHOSTUNREACH' then 'Host Unreachable'
+    when 'Timeout::Error'      then 'Socket Timeout'
+    else "Unhandled #{exception.class}: #{exception.message}"
+    end
   end
 end
