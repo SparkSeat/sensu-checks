@@ -18,6 +18,7 @@ class CheckBound < Check
   option :ipv6,
          short: '-6',
          description: 'Check IPv6-based addresses'
+         boolean: true
 
   def run
     ports = load_listening_ports
