@@ -6,12 +6,12 @@ require 'socket'
 
 class InterfaceCounterMetrics < Sensu::Plugin::Metric::CLI::Graphite
   option :prefix, short: '-p <prefix>',
-    description: 'Graphite prefix/path. %H is hostname, %h is hostname with underscores',
-    default: "%h.net.iface"
+                  description: 'Graphite prefix/path. %H is hostname, %h is hostname with underscores',
+                  default: '%h.net.iface'
 
   def run
     @timestamp = Time.now.to_i
-    @statistics = [:tx_packets, :rx_packets, :tx_bytes, :rx_bytes, :tx_errors, :rx_errors]
+    @stats = %i(tx_packets rx_packets tx_bytes rx_bytes tx_errors rx_errors)
 
     Dir.glob('/sys/class/net/*').each do |iface_path|
       next if File.file?(iface_path)
@@ -25,7 +25,7 @@ class InterfaceCounterMetrics < Sensu::Plugin::Metric::CLI::Graphite
   private
 
   def read_interface(iface_path, iface)
-    @statistics.each do |stat|
+    @stats.each do |stat|
       value = File.open("#{iface_path}/statistics/#{stat}").read.strip
       output "#{prefix}.#{iface}.#{stat}", value, @timestamp
     end
@@ -44,9 +44,7 @@ class InterfaceCounterMetrics < Sensu::Plugin::Metric::CLI::Graphite
     hostname = Socket.gethostname
     underscores = hostname.gsub('.', '_')
 
-    config[:prefix].gsub(/%[hH]/, {
-      '%H' => hostname,
-      '%h' => underscores
-      })
+    config[:prefix].gsub(/%[hH]/,       '%H' => hostname,
+                                        '%h' => underscores)
   end
 end
