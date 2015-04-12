@@ -1,0 +1,81 @@
+#!/usr/bin/env ruby
+# TODO: Allow specifying an address to check on
+# TODO: Return information about *what* is bound (and allow optionally specifying
+# checking this - warning if it doesn't match)
+require_relative '../base'
+
+class CheckBound < Check
+  check_name 'Check Bound Port'
+
+  option :tcp,
+         short: '-t <port>',
+         description: 'Check a TCP port'
+
+  option :udp,
+         short: '-u <port>',
+         description: 'Check a UDP port'
+
+  option :ipv6,
+         short: '-6',
+         description: 'Check IPv6-based addresses'
+
+  def run
+    ports = load_listening_ports
+
+    # Filter on the specified port
+    ports.select! { |p| p[1] =~ /:#{format_port port}\z/ }
+
+    critical "Nothing is bound to #{port}/#{proto}" if ports.length == 0
+    ok "Something is listening on #{port}/#{proto}"
+  end
+
+  private
+
+  #
+  # Open the correct file, split into lines, remove the first one amd split
+  # each line on spaces. Finally, select the ones which are in a listening state
+  # Returns an array of arrays.
+  #
+  def load_listening_ports
+    open(filename)
+      .read
+      .split("\n")
+      .drop(1)
+      .map(&:split)
+      .select { |p| p[3] == '0A' }
+  end
+
+  def proto
+    @_proto ||= derive_proto
+  end
+
+  #
+  # Build a truth table and use it to figure out the protocol
+  #
+  def derive_proto
+    proto_ary = config.values_at(:tcp, :udp, :ipv6).map { |c| !c.nil? }
+
+    case proto_ary
+    when [true,  false, false] then :tcp
+    when [true,  false, true]  then :tcp6
+    when [false, true,  false] then :udp
+    when [false, true,  true]  then :udp6
+    else critical 'Unknown protocol'
+    end
+  end
+
+  def port
+    @_port ||= (config[:tcp] || config[:udp])
+  end
+
+  def filename
+    @_filename ||= "/proc/net/#{proto}"
+  end
+
+  #
+  # The /proc/net filesystem expects port numbers to be formatted in padded hex
+  #
+  def format_port(port)
+    format('%04x', port)
+  end
+end
