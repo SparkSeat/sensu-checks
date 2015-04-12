@@ -15,7 +15,6 @@ class InterfaceCounterMetrics < Metric::Graphite
                   default: '%h.net.iface'
 
   def run
-    @timestamp = Time.now.to_i
     @stats = %i(tx_packets rx_packets tx_bytes rx_bytes tx_errors rx_errors)
 
     Dir.glob('/sys/class/net/*').each do |iface_path|
@@ -32,10 +31,10 @@ class InterfaceCounterMetrics < Metric::Graphite
   def read_interface(iface_path, iface)
     @stats.each do |stat|
       value = File.open("#{iface_path}/statistics/#{stat}").read.strip
-      output "#{prefix}.#{iface}.#{stat}", value, @timestamp
+      output "#{prefix}.#{iface}.#{stat}", value, timestamp
     end
 
     value = File.open("#{iface_path}/operstate").read.strip
-    output "#{prefix}.#{iface}.state", value, @timestamp
+    output "#{prefix}.#{iface}.state", value, timestamp
   end
 end

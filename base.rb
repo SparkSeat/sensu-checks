@@ -5,6 +5,10 @@ module Metric
   require 'socket'
 
   class Graphite < Sensu::Plugin::Metric::CLI::Graphite
+    def timestamp
+      @_timestamp ||= Time.now.to_i
+    end
+
     def prefix
       @prefix ||= parse_prefix
     end
