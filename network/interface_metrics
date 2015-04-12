@@ -1,0 +1,52 @@
+#!/usr/bin/env ruby
+# Inspired by sensu-community-plugins:network/metrics-net.rb
+
+require 'sensu-plugin/metric/cli'
+require 'socket'
+
+class InterfaceCounterMetrics < Sensu::Plugin::Metric::CLI::Graphite
+  option :prefix, short: '-p <prefix>',
+    description: 'Graphite prefix/path. %H is hostname, %h is hostname with underscores',
+    default: "%h.net.iface"
+
+  def run
+    @timestamp = Time.now.to_i
+    @statistics = [:tx_packets, :rx_packets, :tx_bytes, :rx_bytes, :tx_errors, :rx_errors]
+
+    Dir.glob('/sys/class/net/*').each do |iface_path|
+      next if File.file?(iface_path)
+      iface = File.basename(iface_path)
+
+      read_interface(iface_path, iface)
+    end
+    ok
+  end
+
+  private
+
+  def read_interface(iface_path, iface)
+    @statistics.each do |stat|
+      value = File.open("#{iface_path}/statistics/#{stat}").read.strip
+      output "#{prefix}.#{iface}.#{stat}", value, @timestamp
+    end
+
+    value = File.open("#{iface_path}/operstate").read.strip
+    output "#{prefix}.#{iface}.state", value, @timestamp
+  end
+
+  # TODO: Move these into a base class.
+  # Most metrics will probably benefit from this
+  def prefix
+    @prefix ||= parse_prefix
+  end
+
+  def parse_prefix
+    hostname = Socket.gethostname
+    underscores = hostname.gsub('.', '_')
+
+    config[:prefix].gsub(/%[hH]/, {
+      '%H' => hostname,
+      '%h' => underscores
+      })
+  end
+end
