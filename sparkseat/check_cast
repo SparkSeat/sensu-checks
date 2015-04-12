@@ -1,0 +1,38 @@
+#!/usr/bin/env ruby
+
+require_relative '../base'
+require 'uri'
+require 'net/http'
+
+class CheckCast < Check
+  check_name 'Check SparkCast'
+
+  option :uri,
+         short: '-u <uri>',
+         description: 'URI of the SparkCast server',
+         required: true
+
+  def run
+    response = fetch
+
+    # Transport methods supported by this socket.io instance
+    transports = response.body.strip.split(':')[-1]
+
+    case response.code.to_i
+    when 200 then ok "Supported transports: #{transports}"
+    else critical "#{response.code} #{response.message}"
+    end
+  rescue => exception
+    critical "#{exception.class}: #{exception.message}"
+  end
+
+  private
+
+  def fetch(uri = "#{config[:uri]}/socket.io/1")
+    uri = URI.parse(uri)
+    request = Net::HTTP.new(uri.host, uri.port)
+    request.use_ssl = (uri.scheme == 'https')
+
+    request.get(uri.request_uri)
+  end
+end
