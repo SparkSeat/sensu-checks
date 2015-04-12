@@ -1,0 +1,62 @@
+#!/usr/bin/env ruby
+
+require 'sensu-plugin/check/cli'
+require 'socket'
+require 'timeout'
+
+class CheckPort < Sensu::Plugin::Check::CLI
+  check_name "Check Port"
+
+  option :tcp, short: '-t <port>',
+    description: 'Check a TCP port'
+
+  option :udp, short: '-u <port>',
+    description: 'Check a UDP port'
+
+  option :host, short: '-h <host>',
+    description: 'The host to try and connect to',
+    default: 'localhost'
+
+  option :timeout, short: '-s <timeout>',
+    description: 'Timeout in seconds',
+    default: '5'
+
+  option :level, short: '-l crit|warn',
+    description: 'Which status to fail with',
+    default: 'crit'
+
+  def run
+    if config[:tcp]
+      check_tcp
+    elsif config[:udp]
+      check_udp
+    else
+      unknown 'No port/protocol specified'
+    end
+  end
+
+  private
+
+  def check_tcp
+    begin
+      Timeout::timeout(config[:timeout].to_i) do
+        TCPSocket.new(config[:host], config[:tcp].to_i).close
+        ok "Successful connection to #{config[:tcp]}/tcp"
+      end
+    rescue Errno::ECONNREFUSED
+      message 'Connection Refused'
+    rescue Errno::EHOSTUNREACH
+      message 'Host Unreachable'
+    rescue Timeout::Error
+      message 'Socket Timeout'
+    rescue SocketError => message
+      message "Unhandled Error: #{message}"
+    end
+
+    config[:level].downcase.start_with?('warn') ? warning : critical
+  end
+
+  def check_udp
+    critical 'Not implemented! UDP Checking is really hard'
+  end
+end
