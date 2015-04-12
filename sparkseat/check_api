@@ -1,0 +1,33 @@
+#!/usr/bin/env ruby
+
+require_relative '../base'
+require 'uri'
+require 'net/http'
+
+class CheckAPI < Check
+  check_name 'Check API'
+
+  option :server,
+         short: '-s <server>',
+         description: 'URL of the API server',
+         required: true
+
+  def run
+    response = fetch
+
+    case response.code.to_i
+    when 200..204 then ok "v#{response['X-Spark-Version']}"
+    else critical "#{response.code} #{response.message}"
+    end
+  end
+
+  private
+
+  def fetch(uri = "#{config[:server]}/events.json?current_box_office_id=all")
+    uri = URI.parse(uri)
+    request = Net::HTTP.new(uri.host, uri.port)
+    request.use_ssl = (uri.scheme == 'https')
+
+    request.head(uri.request_uri)
+  end
+end
