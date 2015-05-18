@@ -1,7 +1,7 @@
 #!/usr/bin/env ruby
 # TODO: Allow specifying an address to check on
-# TODO: Return information about *what* is bound (and allow optionally specifying
-# checking this - warning if it doesn't match)
+# TODO: Return information about *what* is bound (and allow optionally
+# specifying checking this - warning if it doesn't match)
 require_relative '../base'
 
 class CheckBound < Check
@@ -17,7 +17,7 @@ class CheckBound < Check
 
   option :ipv6,
          short: '-6',
-         description: 'Check IPv6-based addresses'
+         description: 'Check IPv6-based addresses',
          boolean: true
 
   def run
