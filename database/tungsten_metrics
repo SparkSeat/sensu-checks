@@ -3,6 +3,8 @@
 require 'json'
 require_relative '../base'
 
+# Record some metrics about the state of each defined service
+# (as defined in #fields)
 class TungstenMetrics < Metric::Graphite
   option :prefix, short: '-p <prefix>',
                   description: 'Graphite prefix/path. See README',
@@ -25,7 +27,8 @@ class TungstenMetrics < Metric::Graphite
   private
 
   def fields
-    %w(appliedLastSeqno appliedLatency latestEpochNumber maximumStoredSeqNo minimumStoredSeqNo relativeLatency state timeInStateSeconds uptimeSeconds)
+    %w(appliedLastSeqno appliedLatency latestEpochNumber
+       maximumStoredSeqNo minimumStoredSeqNo relativeLatency
+       state timeInStateSeconds uptimeSeconds)
   end
-
 end

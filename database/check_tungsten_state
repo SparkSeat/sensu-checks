@@ -1,11 +1,10 @@
 #!/usr/bin/env ruby
 
-# If the state of any defined replication service is one we don't
-# like the look of - go into a given state
-
 require 'json'
 require_relative '../base'
 
+# If the state of any defined replication service is one we don't
+# like the look of - go into a given state
 class CheckTungstenState < Check
   check_name 'Tungsten Replication State'
 
@@ -14,17 +13,19 @@ class CheckTungstenState < Check
     failtype = nil
 
     data = JSON.parse(`trepctl services -json`)
-
     data.each do |service|
-      state = service['state']
-      failure = states[state] || nil
-
-      if failure
+      if (failure = states[service['state']])
         failures << service['serviceName']
         failtype = failure unless failtype == :critical
       end
     end
 
+    handle(failtype, failures)
+  end
+
+  private
+
+  def handle(failtype, failures)
     if failtype
       send(failtype, failures.join(', '))
     else
@@ -32,14 +33,11 @@ class CheckTungstenState < Check
     end
   end
 
-  private
-
   def states
     # Any state which should return a status other than 'ok', and its exit type
     # http://docs.continuent.com/tungsten-replicator-2.2/operations-status-states.html
     {
-      'OFFLINE:ERROR' => :critical,
+      'OFFLINE:ERROR' => :critical
     }
   end
-
 end
