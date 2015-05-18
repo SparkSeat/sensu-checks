@@ -1,0 +1,31 @@
+#!/usr/bin/env ruby
+
+require 'json'
+require_relative '../base'
+
+class TungstenMetrics < Metric::Graphite
+  option :prefix, short: '-p <prefix>',
+                  description: 'Graphite prefix/path. See README',
+                  default: '%h.replicator'
+
+  def run
+    data = JSON.parse(`trepctl services -json -full`)
+
+    data.each do |service|
+      metrics = service.select { |m| fields.include?(m) }
+      name = service['clusterName']
+      metrics.each do |metric, value|
+        output "#{prefix}.#{name}.#{metric}", value, timestamp
+      end
+    end
+
+    ok
+  end
+
+  private
+
+  def fields
+    %w(appliedLastSeqno appliedLatency latestEpochNumber maximumStoredSeqNo minimumStoredSeqNo relativeLatency state timeInStateSeconds uptimeSeconds)
+  end
+
+end
