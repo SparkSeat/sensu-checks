@@ -1,0 +1,107 @@
+#!/usr/bin/env ruby
+
+require 'mysql2'
+require_relative '../base'
+
+# Fetch some metrics from SHOW GLOBAL STATUS
+class MySQLMetrics < Metric::Graphite
+  option :prefix, short: '-p <prefix>',
+                  description: 'Graphite prefix/path. See README',
+                  default: '%h.mysql'
+
+  option :host, short: '-h <host>',
+                description: 'MySQL Host to connect to',
+                default: 'localhost'
+
+  option :username, short: '-u <username>',
+                    description: 'MySQL Username',
+                    default: 'root'
+
+  option :password, short: '-p <password>',
+                    description: 'MySQL Password',
+                    default: ''
+  def run
+    munge_and_filter_fields(status).each do |name, value|
+      output "#{prefix}.#{name}", value, timestamp
+    end
+
+    ok
+  end
+
+  private
+
+  def status
+    # Get the status from mysql, and turn it into a hash
+    db = Mysql2::Client.new(host: config[:host],
+                            username: config[:username],
+                            password: config[:password])
+
+    results = db.query('SHOW GLOBAL STATUS')
+    results = results.map { |r| { r['Variable_name'] => r['Value'] } }
+    results.reduce({}, :merge)
+  end
+
+  def munge_and_filter_fields(server_fields)
+    # Given a hash of variables with mysql names, map them
+    # to our names and return a hash. Unknown fields will
+    # be ignored
+    data = server_fields.map do |field, value|
+      next { fields[field] => value } if fields.keys.include?(field)
+    end
+
+    data.compact.reduce({}, :merge)
+  end
+
+  # rubocop:disable Metrics/MethodLength
+  def fields
+    {
+      'Bytes_received'                  => 'rx_bytes',
+      'Bytes_sent'                      => 'tx_bytes',
+      'Com_admin_commands'              => 'admin_commands',
+      'Com_begin'                       => 'begin',
+      'Com_change_db'                   => 'change_db',
+      'Com_commit'                      => 'commit',
+      'Com_create_table'                => 'create_table',
+      'Com_drop_table'                  => 'drop_table',
+      'Com_show_keys'                   => 'show_keys',
+      'Com_delete'                      => 'delete',
+      'Com_create_db'                   => 'create_db',
+      'Com_grant'                       => 'grant',
+      'Com_show_processlist'            => 'show_processlist',
+      'Com_flush'                       => 'flush',
+      'Com_insert'                      => 'insert',
+      'Com_purge'                       => 'purge',
+      'Com_replace'                     => 'replace',
+      'Com_rollback'                    => 'rollback',
+      'Com_select'                      => 'select',
+      'Com_set_option'                  => 'set_option',
+      'Com_show_binlogs'                => 'show_binlogs',
+      'Com_show_databases'              => 'show_databases',
+      'Com_show_fields'                 => 'show_fields',
+      'Com_show_status'                 => 'show_status',
+      'Com_show_tables'                 => 'show_tables',
+      'Com_show_variables'              => 'show_variables',
+      'Com_update'                      => 'update',
+      'Com_drop_db'                     => 'drop_db',
+      'Com_revoke'                      => 'revoke',
+      'Com_drop_user'                   => 'drop_user',
+      'Com_show_grants'                 => 'show_grants',
+      'Com_lock_tables'                 => 'lock_tables',
+      'Com_show_create_table'           => 'show_create_table',
+      'Com_unlock_tables'               => 'unlock_tables',
+      'Com_alter_table'                 => 'alter_table',
+      'Innodb_row_lock_current_waits'   => 'current_lock_waits',
+      'Innodb_row_lock_waits'           => 'lock_wait_times',
+      'Innodb_row_lock_time'            => 'row_lock_time',
+      'Open_files'                      => 'open_files',
+      'Open_tables'                     => 'open_tables',
+      'Opened_files'                    => 'opened_files',
+      'Opened_tables'                   => 'opened_tables',
+      'Slow_queries'                    => 'slow_queries',
+      'Queries'                         => 'queries',
+      'Threads_connected'               => 'theads_connected',
+      'Threads_running'                 => 'threads_running',
+      'Uptime'                          => 'uptime'
+    }
+  end
+end
