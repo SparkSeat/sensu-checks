@@ -25,7 +25,7 @@ class CheckAPI < Check
 
   private
 
-  def fetch(uri = "#{config[:uri]}/events.json?current_box_office_id=all")
+  def fetch(uri = "#{config[:uri]}/time.json")
     uri = URI.parse(uri)
     request = Net::HTTP.new(uri.host, uri.port)
     request.use_ssl = (uri.scheme == 'https')
