@@ -12,7 +12,7 @@ class CheckTungstenState < Check
     failures = []
     failtype = nil
 
-    data = JSON.parse(`trepctl services -json`)
+    data = JSON.parse(`sudo /opt/continuent/tungsten/tungsten-replicator/bin/trepctl services -json`)
     data.each do |service|
       if (failure = states[service['state']])
         failures << service['serviceName']
