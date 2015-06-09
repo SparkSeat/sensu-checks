@@ -15,11 +15,8 @@ class CheckCast < Check
   def run
     response = fetch
 
-    # Transport methods supported by this socket.io instance
-    transports = response.body.strip.split(':')[-1]
-
     case response.code.to_i
-    when 200 then ok "Supported transports: #{transports}"
+    when 200 then ok
     else critical "#{response.code} #{response.message}"
     end
   rescue => exception
