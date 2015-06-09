@@ -1,4 +1,4 @@
-#!/usr/bin/env ruby
+#!/usr/local/rvm/wrappers/default/ruby
 
 require_relative '../base'
 require 'uri'
@@ -28,7 +28,7 @@ class CheckCast < Check
 
   private
 
-  def fetch(uri = "#{config[:uri]}/socket.io/1")
+  def fetch(uri = "#{config[:uri]}/socket.io/?transport=polling")
     uri = URI.parse(uri)
     request = Net::HTTP.new(uri.host, uri.port)
     request.use_ssl = (uri.scheme == 'https')
