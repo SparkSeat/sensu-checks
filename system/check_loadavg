@@ -1,4 +1,4 @@
-#!/usr/bin/env ruby
+#!/usr/local/rvm/wrappers/default/ruby
 # Inspired by sensu-community-plugins:system/check-load.rb
 
 require_relative '../base'
