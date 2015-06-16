@@ -29,7 +29,8 @@ class MemoryMetrics < Metric::Graphite
       'MemFree'      => 'free',
       'MemAvailable' => 'avail',
       'Buffers'      => 'buffers',
-      'Cached'       => 'cached'
+      'Cached'       => 'cached',
+      'Inactive'     => 'inactive'
     }
   end
 
