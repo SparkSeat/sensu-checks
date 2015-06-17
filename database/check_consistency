@@ -13,11 +13,6 @@ class CheckConsistency < Check
          description: 'Check a TCP port',
          required: true
 
-  option :server2,
-         long: '--server2 <hostname>',
-         description: 'Check a TCP port',
-         required: true
-
   option :username,
          long: '--username <username>',
          description: 'Username for database user',
