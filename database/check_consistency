@@ -42,7 +42,7 @@ class CheckConsistency < Check
 
     return ok stdout if stdout =~ /Databases are consistent/
 
-    return unkown stdout
+    return unknown stdout
   end
 
   private
