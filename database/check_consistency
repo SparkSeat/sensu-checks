@@ -51,9 +51,13 @@ class CheckConsistency < Check
 
   private
 
+  def hostname
+    Socket.gethostname.split('.').first
+  end
+
   def check_script(config)
     server1  = config[:server1]
-    server2  = config[:server2]
+    server2  = "#{hostname}.hive.sparkseat.com"
     username = config[:username]
     password = config[:password]
     database = config[:database]
