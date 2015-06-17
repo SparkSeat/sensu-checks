@@ -1,0 +1,70 @@
+#!/usr/local/rvm/wrappers/default/ruby
+
+require_relative '../base'
+require 'open3'
+
+# Test database consistency between server 1 and server 2
+class CheckConsistency < Check
+  check_name 'Check Database Consistency'
+
+  option :server1,
+         long: '--server1 <hostname>',
+         description: 'Check a TCP port',
+         required: true
+
+  option :server2,
+         long: '--server2 <hostname>',
+         description: 'Check a TCP port',
+         required: true
+
+  option :username,
+         long: '--username <username>',
+         description: 'Username for database user',
+         required: true
+
+  option :password,
+         long: '--password <password>',
+         description: 'Password for database user',
+         required: true
+
+  option :database,
+         long: '--database <database>',
+         description: 'The database schema to check',
+         required: true
+
+  def run
+    script = check_script(config)
+    stdout, stderr, _status = Open3.capture3(script)
+
+    return critical stderr if stderr && stderr != ''
+
+    parse_results(stdout)
+  end
+
+  def parse_results(stdout)
+    return critical stdout if stdout =~ /ERROR/
+
+    return ok stdout if stdout =~ /Databases are consistent/
+
+    return unkown stdout
+  end
+
+  private
+
+  def check_script(config)
+    server1  = config[:server1]
+    server2  = config[:server2]
+    username = config[:username]
+    password = config[:password]
+    database = config[:database]
+
+    <<-EOF
+mysqldbcompare --changes-for=server2                        \
+               --run-all-tests                              \
+               --skip-diff                                  \
+               --server1=#{username}:#{password}@#{server1} \
+               --server2=#{username}:#{password}@#{server2} \
+               #{database}:#{database}
+    EOF
+  end
+end
