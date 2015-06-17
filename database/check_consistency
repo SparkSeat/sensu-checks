@@ -60,7 +60,7 @@ class CheckConsistency < Check
     database = config[:database]
 
     <<-EOF
-mysqldbcompare --changes-for=server2                        \
+mysqldbcompare --changes-for=server1                        \
                --run-all-tests                              \
                --skip-diff                                  \
                --server1=#{username}:#{password}@#{server1} \
