@@ -39,6 +39,7 @@ class CheckConsistency < Check
 
   def parse_results(stdout)
     return critical stdout if stdout =~ /ERROR/
+    return critical stdout if stdout =~ /Database consistency check failed/
 
     return ok stdout if stdout =~ /Databases are consistent/
 
@@ -64,6 +65,7 @@ mysqldbcompare --changes-for=server2                        \
                --skip-diff                                  \
                --server1=#{username}:#{password}@#{server1} \
                --server2=#{username}:#{password}@#{server2} \
+               --difftype=sql                               \
                #{database}:#{database}
     EOF
   end
