@@ -2,6 +2,7 @@
 
 require_relative '../base'
 require 'open3'
+require 'socket'
 
 # Test database consistency between server 1 and server 2
 class CheckConsistency < Check
