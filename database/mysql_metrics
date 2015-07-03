@@ -1,11 +1,11 @@
-#!/usr/bin/env ruby
+#!/usr/local/rvm/wrappers/default/ruby
 
 require 'mysql2'
 require_relative '../base'
 
 # Fetch some metrics from SHOW GLOBAL STATUS
 class MySQLMetrics < Metric::Graphite
-  option :prefix, short: '-p <prefix>',
+  option :prefix, short: '-P <prefix>',
                   description: 'Graphite prefix/path. See README',
                   default: '%h.mysql'
 
