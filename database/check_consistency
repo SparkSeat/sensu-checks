@@ -96,7 +96,6 @@ Full output follows:
 EOF
   end
 
-
   def check_script(config)
     server1  = config[:server1]
     server2  = "#{hostname}.hive.sparkseat.com"
