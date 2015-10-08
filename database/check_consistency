@@ -37,20 +37,65 @@ class CheckConsistency < Check
     parse_results(stdout)
   end
 
-  def parse_results(stdout)
-    return critical stdout if stdout =~ /ERROR/
-    return critical stdout if stdout =~ /Database consistency check failed/
-
-    return ok stdout if stdout =~ /Databases are consistent/
-
-    return unknown stdout
-  end
-
   private
 
   def hostname
     Socket.gethostname.split('.').first
   end
+
+  def parse_results(stdout)
+    return critical stdout if stdout =~ /ERROR/
+    return ok stdout if stdout =~ /Databases are consistent/
+
+    results = parse_sql(stdout)
+
+    if results[:total] < 3
+      ok summary(results, stdout)
+    elsif results[:total] < 5
+      warn summary(results, stdout)
+    else
+      critical summary(results, stdout)
+    end
+
+    return unknown stdout
+  end
+
+  def parse_sql(stdout)
+    inserts = stdout.scan(/INSERT INTO `SparkSeat`\.`(.+?)`/)
+    updates = stdout.scan(/UPDATE `SparkSeat`\.`(.+?)`/)
+    deletes = stdout.scan(/DELETE FROM `SparkSeat`\.`(.+?)`/)
+
+    results = {
+      inserts: Hash[inserts.flatten.group_by(&:to_s).map { |k, v| [k, v.length] }],
+      updates: Hash[updates.flatten.group_by(&:to_s).map { |k, v| [k, v.length] }],
+      deletes: Hash[deletes.flatten.group_by(&:to_s).map { |k, v| [k, v.length] }]
+    }
+
+    results[:inserts]['total'] = inserts.size
+    results[:updates]['total'] = updates.size
+    results[:deletes]['total'] = deletes.size
+
+    results[:total] = results[:inserts]['total'] + results[:updates]['total'] + results[:deletes]['total']
+
+    results
+  end
+
+  def summary(results, stdout)
+  <<-EOF
+Consistency Check Finished.
+
+#{results[:total]} issues found:
+
+Missing Records:    #{results[:inserts].to_json}
+Updated Records:    #{results[:updates].to_json}
+Extraneous Records: #{results[:deletes].to_json}
+
+Full output follows:
+
+#{stdout}
+EOF
+  end
+
 
   def check_script(config)
     server1  = config[:server1]
