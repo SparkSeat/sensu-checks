@@ -14,7 +14,7 @@ class CheckLoad < Check
          short: '-w <1m>,<5m>,<15m>',
          description: 'Warning threshold for 1/5/15 min loadavg',
          proc: proc { |a| a.split(',').map(&:to_f) },
-         default: [5, 10, 20]
+         default: [10, 10, 20]
 
   option :crit,
          short: '-c <1m>,<5m>,<15m>',
