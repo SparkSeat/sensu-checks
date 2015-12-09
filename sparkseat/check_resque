@@ -1,0 +1,28 @@
+#!/usr/local/rvm/wrappers/default/ruby
+#
+#   resque-metrics
+#
+# DESCRIPTION:
+#   Based around https://github.com/sensu-plugins/sensu-plugins-resque/blob/master/bin/metrics-resque.rb
+#   Alerts if there are failed resque jobs
+#
+
+require_relative '../base'
+require 'socket'
+require 'resque'
+require 'resque/failure/redis'
+
+class ResqueFailures < Check
+  check_name 'Check Resque Failed Jobs'
+
+  def run
+    redis = Redis.new(host: 'localhost', port: '6379', db: '0')
+    Resque.redis = redis
+
+    count = Resque::Failure::Redis.count
+
+    return ok 'No failed jobs' if count == 0
+
+    critical "#{count} failed jobs"
+  end
+end
