@@ -1,0 +1,23 @@
+#!/usr/local/rvm/wrappers/default/ruby
+
+require_relative '../base'
+
+class CheckDaemon < Check
+  check_name 'Check Daemon Active'
+
+  option :daemon,
+         short: '-d <name>',
+         description: 'The daemon name to check',
+         required: true
+
+  def run
+    stdout = `systemctl is-active #{config[:daemon]}`
+
+    case $CHILD_STATUS.exitstatus.to_i
+    when 0 then ok "#{config[:daemon]} is active"
+    else critical "#{config[:daemon]} #{stdout}"
+    end
+  rescue => exception
+    critical "#{exception.class}: #{exception.message}"
+  end
+end
