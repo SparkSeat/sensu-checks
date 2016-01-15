@@ -1,6 +1,7 @@
 #!/usr/local/rvm/wrappers/default/ruby
 
 require_relative '../base'
+require 'English'
 
 class CheckDaemon < Check
   check_name 'Check Daemon Active'
