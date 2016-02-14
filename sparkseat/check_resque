@@ -22,6 +22,7 @@ class ResqueFailures < Check
     count = Resque::Failure::Redis.count
 
     return ok 'No failed jobs' if count == 0
+    return warning "#{count} failed jobs" if count <= 2
 
     critical "#{count} failed jobs"
   end
