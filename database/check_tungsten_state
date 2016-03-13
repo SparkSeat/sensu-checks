@@ -12,7 +12,11 @@ class CheckTungstenState < Check
     failures = []
     failtype = nil
 
-    data = JSON.parse(`sudo /opt/continuent/tungsten/tungsten-replicator/bin/trepctl services -json`)
+    # Tungsten helpfully prints ... while it is waiting. That's not valid json
+    data = `sudo /opt/continuent/tungsten/tungsten-replicator/bin/trepctl services -json`
+    data.gsub!(/^\.+/, '')
+    data = JSON.parse(data)
+
     data.each do |service|
       if (failure = states[service['state']])
         failures << service['serviceName']
