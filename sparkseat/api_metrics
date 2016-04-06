@@ -1,0 +1,75 @@
+#!/usr/local/rvm/wrappers/default/ruby
+
+require_relative '../base'
+
+require 'json'
+require 'net/http'
+require 'uri'
+
+class ApiMetrics < Metric::Graphite
+  option :host, short: '-h <host>',
+                description: 'API server host',
+                default: 'api.sparkseat.com'
+
+  option :api_key, short: '-k <key>',
+                   description: 'API Key'
+
+  def run
+    fetch_ticket_stats.each do |key, value|
+      output "api.tickets.#{key}", value, timestamp
+    end
+
+    fetch_transaction_stats.each do |key, value|
+      if value.is_a?(Array)
+        value.each do |type|
+          name = type['name'].gsub('::', '.').downcase
+
+          output "api.#{name}.count", type['count'], timestamp
+          output "api.#{name}.value", type['value'], timestamp
+        end
+      else
+        output "api.transactions.#{key}", value, timestamp
+      end
+    end
+
+    fetch_email_stats.each do |key, value|
+      output "api.emails.#{key}", value, timestamp
+    end
+
+    customer_stats = fetch_customer_stats
+    output 'api.customers.total', customer_stats['total_count'], timestamp
+
+    ok
+  end
+
+  private
+
+  def fetch_ticket_stats
+    api_request '/api/statistics/tickets.json'
+  end
+
+  def fetch_transaction_stats
+    api_request '/api/statistics/transactions.json'
+  end
+
+  def fetch_email_stats
+    api_request '/api/statistics/emails.json'
+  end
+
+  def fetch_customer_stats
+    api_request '/api/statistics/customers.json'
+  end
+
+  def api_request(url)
+    uri = URI.join('https://' + config[:host], url)
+
+    request = Net::HTTP::Get.new(uri)
+    request['Authorization'] = "Token #{config[:api_key]}"
+
+    response = Net::HTTP.start(uri.hostname, uri.port, use_ssl: true) do |http|
+      http.request(request)
+    end
+
+    JSON.parse(response.body)
+  end
+end
