@@ -11,7 +11,10 @@ class TungstenMetrics < Metric::Graphite
                   default: '%h.replicator'
 
   def run
-    data = JSON.parse(`sudo /opt/continuent/tungsten/tungsten-replicator/bin/trepctl services -json -full`)
+    # Tungsten helpfully prints ... while it is waiting. That's not valid json
+    data = `sudo /opt/continuent/tungsten/tungsten-replicator/bin/trepctl services -json -full`
+    data.gsub!(/^\.+/, '')
+    data = JSON.parse(data)
 
     data.each do |service|
       metrics = service.select { |m| fields.include?(m) }
